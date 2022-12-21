@@ -84,6 +84,7 @@ jobs:
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           pull: true
           ## TODO: Only push on master? Or always?
-          push: ${{ github.ref_name == 'master' }}
+          # push: ${{ github.ref_name == 'master' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

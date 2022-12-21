@@ -42,6 +42,7 @@ FROM python:3-slim as run
 
 # Set default environment variables
 ENV XAUTHORITY="/tmp/.Xauthority"
+ENV XDG_RUNTIME_DIR="/tmp"
 ENV DISPLAY=":0"
 ENV PULSE_SERVER=""
 ENV KLIPPERSCREEN_RESTART_DELAY="60"
@@ -61,7 +62,8 @@ RUN apt-get update && \
       fonts-freefont-ttf \
       libcairo2 \
       libatlas3-base \
-      libdbus-glib-1-2 && \
+      libdbus-glib-1-2 \
+      libmpv1 && \
     apt-get clean
 
 # Set default working directory
