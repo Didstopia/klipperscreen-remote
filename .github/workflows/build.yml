@@ -1,0 +1,89 @@
+# GitHub Actions workflow for building multi-arch Docker images and publishing them to Docker Hub
+
+name: Build
+
+on:
+
+  push:
+    branches:
+      - master
+
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build-image:
+    name: Build & Publish Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
+      tag: ${{ steps.generate_tag.outputs.tag }}
+    steps:
+
+      # Checkout the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Setup QEMU for multi-architecture builds
+      # https://github.com/docker/setup-qemu-action
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v2
+
+      # Setup Docker Buildx for multi-architecture builds
+      # https://github.com/docker/setup-buildx-action
+      - name: Setup Docker Buildx
+        id: docker_buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Generate a tag for the image
+      - name: Generate Tag
+        id: generate_tag
+        run: |
+          echo "::notice::Generating tag for image: ${{ github.repository }}"
+          # If not a pull request, use github.ref_name, otherwise use the pull request number
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "tag=pr-${{ github.event.number }}" >> $GITHUB_OUTPUT
+            echo "::notice::Generated PR image tag: pr-${{ github.event.number }}"
+          else
+            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "::notice::Generated non-PR image tag: ${{ github.ref_name }}"
+          fi
+
+      # Login to Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DIDSTOPIA_DOCKERHUB_TOKEN }}
+          password: ${{ secrets.DIDSTOPIA_DOCKERHUB_USERNAME }}
+      
+      # Generate the metadata for the image
+      - name: Generate Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ${{ github.repository }}
+          flavor: |
+            latest=true
+          tags: |
+            type=raw,value=${{ steps.generate_tag.outputs.tag }}
+
+      # Build the image and push it to Docker Hub
+      - name: Build and Push Image to Docker Hub
+        uses: docker/build-push-action@v3
+        with:
+          file: Dockerfile
+          context: .
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          pull: true
+          ## TODO: Only push on master? Or always?
+          push: ${{ github.ref_name == 'master' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

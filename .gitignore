@@ -1,0 +1,30 @@
+# Ignore everything by default
+*
+
+# Allow .git specific files and folders
+!.gitignore
+!.gitattributes
+!.github/
+!.github/**/*
+
+# Allow VSCode specific files and folders
+!.vscode/
+!.vscode/**/*
+
+# Allow Docker specific files and folders
+!Dockerfile
+!docker-compose.yml
+!docker-compose.yaml
+!.dockerignore
+
+# Allow sample files and folders
+!sample/
+!sample/**/*
+!*.sample.*
+
+# Allow misc. files and folders
+!README
+!README.*
+!LICENSE
+!LICENSE.*
+!Makefile
